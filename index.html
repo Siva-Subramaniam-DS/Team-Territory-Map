@@ -626,19 +626,16 @@
                 updateEmoji(zoneid, finalEmoji);
 
               } else {
-                // INACTIVE STATE: "White Only"
+                // INACTIVE STATE: Transparent (Map Visible), No Emoji
                 cell.style.pointerEvents = "none";
                 cell.style.cursor = "default";
 
-                // Force White Color
-                const whiteColor = "#ffffff";
-                cell.style.fill = whiteColor;
-                cell.setAttribute("data-colored", "true");
+                // Revert to Main Grid / Transparent
+                cell.style.fill = "transparent";
+                cell.removeAttribute("data-colored");
 
-                // Move to white group (glow effect for white cells)
-                const group = getTeamGroup(whiteColor);
-                if (cell.parentNode !== group) {
-                  group.appendChild(cell);
+                if (cell.parentNode !== grid) {
+                  grid.insertBefore(cell, grid.firstChild);
                 }
 
                 // Hide Emoji
