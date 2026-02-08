@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Territory Map - Live Updates</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0a0a0a;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    h1 {
+      color: #fff;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .map-wrapper {
+      position: relative;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .grid-cell {
+      fill: transparent;
+      stroke: rgba(255, 255, 255, 0.1);
+      stroke-width: 0.5;
+      cursor: default;
+      transition: 0.2s;
+    }
+
+    .grid-cell[data-colored="true"] {
+      fill-opacity: 0.6;
+      stroke: rgba(255, 255, 255, 0.3);
+      filter: saturate(1.5) brightness(1.1);
+    }
+
+    .grid-cell[data-colored="true"]:hover {
+      fill-opacity: 0.9;
+      filter: saturate(1.5) brightness(1.3);
+    }
+
+    /* Winner Highlights */
+    .grid-cell[data-winner="true"] {
+      stroke: gold !important;
+      stroke-width: 2.5 !important;
+      fill-opacity: 0.8 !important;
+      filter: drop-shadow(0 0 6px gold);
+    }
+
+    /* Selected Cell for Interaction */
+    .grid-cell.selected {
+      stroke: #ffffff;
+      stroke-width: 3;
+      stroke-dasharray: 6;
+      stroke-opacity: 1;
+      animation: pulse-border 1.5s infinite;
+    }
+
+    @keyframes pulse-border {
+      0% {
+        stroke-opacity: 1;
+      }
+
+      50% {
+        stroke-opacity: 0.5;
+      }
+
+      100% {
+        stroke-opacity: 1;
+      }
+    }
+
+    .tooltip {
+      position: fixed;
+      background: rgba(10, 10, 15, 0.95);
+      color: #e0e0e0;
+      padding: 15px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      z-index: 1000;
+      min-width: 320px;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+    }
+
+    .tooltip.show {
+      opacity: 1;
+      pointer-events: none;
+      transform: translateY(0);
+    }
+
+    .ship-header {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .ship-header h3 {
+      font-size: 1.2rem;
+      color: #fff;
+      margin: 0;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .badge {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: bold;
+      letter-spacing: 1px;
+      color: #aaa;
+    }
+
+    .match-score {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 15px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .team-side {
+      text-align: center;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .team-logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #222;
+      margin-bottom: 8px;
+      object-fit: cover;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .team-name {
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 2px;
+      text-transform: capitalize;
+    }
+
+    .team-captain {
+      font-size: 0.75rem;
+      color: #888;
+    }
+
+    .score-board {
+      text-align: center;
+      padding: 0 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .score-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .score {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #fff;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .vs {
+      font-size: 0.8rem;
+      color: #555;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-top: -5px;
+    }
+
+    .footer-info {
+      font-size: 0.8rem;
+      color: #666;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 8px 12px;
+      border-radius: 6px;
+      color: #fff;
+    }
+
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <h1>🗺️ Team Territory Map</h1>
+
+    <div class="map-wrapper">
+      <svg width="1536" height="695" viewBox="0 0 1536 695">
+        <image href="index.svg" width="1536" height="695" />
+        <g id="grid"></g>
+      </svg>
+    </div>
+
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <div class="tooltip" id="tooltip"></div>
+
+  <script>
+    /* CONFIG */
+    const COLS = 53;
+    const ROWS = 24;
+    const SVG_WIDTH = 1536;
+    const SVG_HEIGHT = 695;
+    const REFRESH_INTERVAL = 10000;
+
+    const SHEET_URL =
+      "https://docs.google.com/spreadsheets/d/1pohzT2C9giZBJ_eH932_y_tXMCl8GjnpE5bJPgPL9ew/export?format=csv&gid=0";
+
+    const CELL_W = SVG_WIDTH / COLS;
+    const CELL_H = SVG_HEIGHT / ROWS;
+
+    const grid = document.getElementById("grid");
+    const tooltip = document.getElementById("tooltip");
+    const legend = document.getElementById("legend");
+
+    const cells = {};
+    let teamData = {};
+    let selectedZoneId = null;
+    let manualStates = {};
+
+    // Emoji Helper
+    const EMOJI_MAP = {
+      ":crossed_swords:": "⚔️",
+      ":dagger:": "🗡️"
+    };
+
+    const parseEmoji = (text) => {
+      if (!text) return "";
+      return EMOJI_MAP[text] || text;
+    };
+
+    /* BUILD GRID */
+    let zone = 1;
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("x", c * CELL_W);
+        rect.setAttribute("y", r * CELL_H);
+        rect.setAttribute("width", CELL_W);
+        rect.setAttribute("height", CELL_H);
+        rect.classList.add("grid-cell");
+        rect.dataset.zone = zone;
+
+        // Interaction: Hover for details
+        rect.addEventListener("mouseenter", (e) => showTooltip(e, rect.dataset.zone));
+        rect.addEventListener("mouseleave", hideTooltip);
+
+        // Interaction: Click for "Attack Request" (Only if Active)
+        rect.addEventListener("click", (e) => {
+          const zoneId = rect.dataset.zone;
+          const data = teamData[zoneId];
+
+          // Allow interaction only if active
+          if (data && data.isActive) {
+            e.stopPropagation();
+
+            if (selectedZoneId && cells[selectedZoneId]) {
+              cells[selectedZoneId].classList.remove("selected");
+            }
+
+            if (selectedZoneId === zoneId) {
+              selectedZoneId = null; // Toggle off
+            } else {
+              selectedZoneId = zoneId;
+              rect.classList.add("selected");
+            }
+          }
+          // If inactive, let event bubble to document (deselects current)
+        });
+
+        grid.appendChild(rect);
+        cells[zone] = rect;
+        zone++;
+      }
+    }
+
+    // Interaction: Keydown for Attack Logic
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && selectedZoneId) {
+        e.preventDefault();
+        const currentData = teamData[selectedZoneId];
+
+        // Double check active status (though selection shouldn't exist if inactive)
+        if (!currentData || !currentData.isActive) return;
+
+        const currentState = manualStates[selectedZoneId];
+        let nextState = null;
+
+        // Toggle Logic: None -> 🗡️ -> ⚔️ -> None
+        if (!currentState) {
+          nextState = "🗡️";
+        } else if (currentState === "🗡️") {
+          nextState = "⚔️";
+        } else {
+          nextState = null;
+        }
+
+        if (nextState) {
+          manualStates[selectedZoneId] = nextState;
+          updateEmoji(selectedZoneId, nextState);
+        } else {
+          delete manualStates[selectedZoneId];
+          // Revert to sheet data
+          const sheetEmoji = currentData ? parseEmoji(currentData.emoji_bg) : "";
+          updateEmoji(selectedZoneId, sheetEmoji);
+        }
+      }
+    });
+
+    // Close tooltip & Selection on outside click
+    document.addEventListener("click", () => {
+      if (selectedZoneId && cells[selectedZoneId]) {
+        cells[selectedZoneId].classList.remove("selected");
+      }
+      selectedZoneId = null;
+      hideTooltip();
+    });
+
+    function showTooltip(e, zoneId) {
+      const data = teamData[zoneId];
+      // Even if no data, tooltip shouldn't show unless it's a valid zone with info
+      if (!data) return;
+
+      const shipName = data?.ship_name || 'Designated Zone';
+      const shipClass = data?.ship_class || 'Classified';
+      const squadSize = data?.squad_size || '0';
+
+      const teamALogo = data?.team_a_logo || '';
+      const teamAName = data?.team_a_name || 'Team A';
+      const teamACaptain = data?.team_a_captain || '-';
+      const teamAScore = data?.team_a_score || '0';
+
+      const teamBLogo = data?.team_b_logo || '';
+      const teamBName = data?.team_b_name || 'Team B';
+      const teamBCaptain = data?.team_b_captain || '-';
+      const teamBScore = data?.team_b_score || '0';
+
+      const html = `
+        <div class="ship-header">
+          <h3>${shipName}</h3>
+          <span class="badge">${shipClass}</span>
+        </div>
+        
+        <div class="match-score">
+          <div class="team-side">
+             ${teamALogo ? `<img src="${teamALogo}" class="team-logo" onerror="this.style.display='none'">` : '<div class="team-logo"></div>'}
+             <div class="team-name">${teamAName}</div>
+             <div class="team-captain">👑 ${teamACaptain}</div>
+          </div>
+          
+          <div class="score-board">
+            <div class="score-container">
+               <div class="score">${teamAScore}</div>
+               <div class="score">-</div>
+               <div class="score">${teamBScore}</div>
+            </div>
+          </div>
+          
+          <div class="team-side">
+             ${teamBLogo ? `<img src="${teamBLogo}" class="team-logo" onerror="this.style.display='none'">` : '<div class="team-logo"></div>'}
+             <div class="team-name">${teamBName}</div>
+             <div class="team-captain">👑 ${teamBCaptain}</div>
+          </div>
+        </div>
+
+        <div class="footer-info">
+           <div>Squad Size: <strong>${squadSize}</strong></div>
+           <div>Zone ID: ${zoneId}</div>
+        </div>
+      `;
+
+      tooltip.innerHTML = html;
+      tooltip.classList.add("show");
+
+      // Position logic
+      const rect = cells[zoneId].getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      // Smart positioning
+      const tooltipW = 320;
+      const tooltipH = 200;
+
+      let left = centerX - tooltipW / 2;
+      let top = centerY - tooltipH - 20;
+
+      // Boundary checks
+      if (left < 10) left = 10;
+      if (left + tooltipW > window.innerWidth - 10) left = window.innerWidth - tooltipW - 10;
+      if (top < 10) top = centerY + 20;
+
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+    }
+
+    function hideTooltip() {
+      tooltip.classList.remove("show");
+    }
+
+    function updateEmoji(zoneId, emoji) {
+      let el = document.getElementById(`emoji-${zoneId}`);
+      if (!el) {
+        if (!emoji) return; // Don't create if empty
+        el = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        const cell = cells[zoneId];
+        // Ensure cell exists before accessing attributes
+        if (!cell) return;
+
+        const x = parseFloat(cell.getAttribute("x")) + CELL_W / 2;
+        const y = parseFloat(cell.getAttribute("y")) + CELL_H / 2 + 5;
+
+        el.setAttribute("x", x);
+        el.setAttribute("y", y);
+        el.setAttribute("text-anchor", "middle");
+        el.setAttribute("font-size", "16px"); // Adjusted to match user preference
+        el.setAttribute("pointer-events", "none");
+        el.style.textShadow = "0px 0px 3px rgba(0,0,0,0.8)"; // Keep visibility
+        el.id = `emoji-${zoneId}`;
+        grid.appendChild(el);
+      }
+      el.textContent = emoji;
+      if (!emoji) el.remove();
+    }
+
+    function loadColors() {
+      fetch(SHEET_URL + "&t=" + Date.now())
+        .then(res => res.text())
+        .then(csv => {
+          const rows = csv.trim().split("\n").slice(1);
+
+          // Regex to split by comma, handling quotes
+          const splitCSV = (str) => {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < str.length; i++) {
+              const char = str[i];
+              if (char === '"') {
+                inQuotes = !inQuotes;
+              } else if (char === ',' && !inQuotes) {
+                result.push(current.trim());
+                current = '';
+              } else {
+                current += char;
+              }
+            }
+            result.push(current.trim());
+            return result.map(s => s.replace(/^"|"$/g, '').replace(/""/g, '"'));
+          };
+
+          // Cache for group elements within this execution
+          const groupCache = {};
+
+          const getTeamGroup = (color) => {
+            if (groupCache[color]) return groupCache[color];
+
+            // Create a safe ID from color hex
+            const safeColor = color.replace(/[^a-z0-9]/gi, '');
+            const groupId = `group-${safeColor}`;
+
+            let g = document.getElementById(groupId);
+            if (!g) {
+              g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+              g.id = groupId;
+              // Glowing border effect
+              g.style.filter = `drop-shadow(0 0 5px ${color})`;
+              g.style.transition = "filter 0.3s ease";
+
+              // Insert at the bottom of the stack (before first child)
+              // This ensures grid lines (from transparency) and emojis stay on top
+              grid.insertBefore(g, grid.firstChild);
+            }
+            groupCache[color] = g;
+            return g;
+          };
+
+          rows.forEach(row => {
+            const parts = splitCSV(row);
+            if (parts.length < 1) return;
+
+            const zoneid = parts[0];
+            // Skip header if it leaked in or invalid rows
+            if (zoneid === "zoneid" || !cells[zoneid]) return;
+
+            // Option Column (P / Index 15): TRUE means Active/Interactable
+            const optionRaw = parts[15]?.trim().toUpperCase();
+            const isActive = optionRaw === "TRUE";
+
+            const data = {
+              zoneid: zoneid,
+              color: parts[1]?.toLowerCase(),
+              emoji_bg: parseEmoji(parts[2]),
+              emoji_hover: parseEmoji(parts[3]),
+              team_a_logo: parts[4],
+              team_a_captain: parts[5],
+              team_a_name: parts[6],
+              team_a_score: parts[7],
+              team_b_score: parts[8],
+              team_b_name: parts[9],
+              team_b_captain: parts[10],
+              team_b_logo: parts[11],
+              ship_name: parts[12],
+              ship_class: parts[13],
+              squad_size: parts[14],
+              isActive: isActive
+            };
+
+            const cell = cells[zoneid];
+            if (cell) {
+              // Update Cursor based on Active Status
+              if (isActive) {
+                cell.style.cursor = "pointer";
+              } else {
+                cell.style.cursor = "default";
+                // If this zone became inactive while selected, deselect it
+                if (selectedZoneId === zoneid) {
+                  cell.classList.remove("selected");
+                  selectedZoneId = null;
+                  hideTooltip();
+                }
+              }
+              // Ensure events are always enabled for hover interaction
+              cell.style.pointerEvents = "all";
+
+              /* APPLY COLOR */
+              if (data.color && data.color !== "FALSE") {
+                let applyColor = data.color;
+                // Special handling for TRUE as color
+                if (parts[1] === "TRUE") applyColor = "#ffffff";
+
+                cell.style.fill = applyColor;
+                cell.setAttribute("data-colored", "true");
+
+                // Move to team group for collective glow
+                const group = getTeamGroup(applyColor);
+                if (cell.parentNode !== group) {
+                  group.appendChild(cell);
+                }
+              } else {
+                // Reset/Clear color
+                cell.style.fill = "transparent";
+                cell.removeAttribute("data-colored");
+
+                // Move back to main grid (background layer)
+                if (cell.parentNode !== grid) {
+                  grid.insertBefore(cell, grid.firstChild);
+                }
+              }
+
+              /* EMOJI RESOLUTION */
+              let finalEmoji = "";
+
+              // 1. Check Manual Override (Fight State)
+              if (manualStates[zoneid]) {
+                // If Sheet has Color (Fight Finished), Clear Override
+                if (data.color && data.color !== "FALSE") {
+                  delete manualStates[zoneid];
+                } else {
+                  finalEmoji = manualStates[zoneid];
+                }
+              }
+
+              // 2. If No Override, Use Sheet Data
+              if (!finalEmoji) {
+                finalEmoji = parseEmoji(parts[2]);
+              }
+
+              updateEmoji(zoneid, finalEmoji);
+            }
+
+            teamData[zoneid] = data;
+          });
+        })
+        .catch(e => console.error("Sheet Error:", e));
+    }
+
+    loadColors();
+    setInterval(loadColors, REFRESH_INTERVAL); // Checking sheet every 10s 
+
+  </script>
+
+</body>
+
+</html>
