@@ -554,7 +554,7 @@
             // Skip header if it leaked in or invalid rows
             if (zoneid === "zoneid" || !cells[zoneid]) return;
 
-            // Option Column (P / Index 15): TRUE means Active/Interactable
+            // Option Column (P / Index 15): TRUE means Active/INTERACTABLE + DATA SHOWN
             const optionRaw = parts[15]?.trim().toUpperCase();
             const isActive = optionRaw === "TRUE";
 
@@ -579,65 +579,78 @@
 
             const cell = cells[zoneid];
             if (cell) {
-              // Update Cursor based on Active Status
               if (isActive) {
+                // ACTIVE STATE: Show Data and Allow Interaction
+                cell.style.pointerEvents = "all";
                 cell.style.cursor = "pointer";
+
+                /* APPLY COLOR */
+                if (data.color && data.color !== "FALSE") {
+                  let applyColor = data.color;
+                  // Special handling for TRUE as color
+                  if (parts[1] === "TRUE") applyColor = "#ffffff";
+
+                  cell.style.fill = applyColor;
+                  cell.setAttribute("data-colored", "true");
+
+                  // Move to team group for collective glow
+                  const group = getTeamGroup(applyColor);
+                  if (cell.parentNode !== group) {
+                    group.appendChild(cell);
+                  }
+                } else {
+                  // Transparent if no color assigned
+                  cell.style.fill = "transparent";
+                  cell.removeAttribute("data-colored");
+
+                  // Move back to main grid (background layer)
+                  if (cell.parentNode !== grid) {
+                    grid.insertBefore(cell, grid.firstChild);
+                  }
+                }
+
+                /* EMOJI RESOLUTION */
+                let finalEmoji = "";
+                // 1. Check Manual Override (Fight State)
+                if (manualStates[zoneid]) {
+                  if (data.color && data.color !== "FALSE") {
+                    delete manualStates[zoneid];
+                  } else {
+                    finalEmoji = manualStates[zoneid];
+                  }
+                }
+                // 2. If No Override, Use Sheet Data
+                if (!finalEmoji) {
+                  finalEmoji = parseEmoji(parts[2]);
+                }
+                updateEmoji(zoneid, finalEmoji);
+
               } else {
+                // INACTIVE STATE: "White Only"
+                cell.style.pointerEvents = "none";
                 cell.style.cursor = "default";
-                // If this zone became inactive while selected, deselect it
+
+                // Force White Color
+                const whiteColor = "#ffffff";
+                cell.style.fill = whiteColor;
+                cell.setAttribute("data-colored", "true");
+
+                // Move to white group (glow effect for white cells)
+                const group = getTeamGroup(whiteColor);
+                if (cell.parentNode !== group) {
+                  group.appendChild(cell);
+                }
+
+                // Hide Emoji
+                updateEmoji(zoneid, "");
+
+                // Deselect if currently selected
                 if (selectedZoneId === zoneid) {
                   cell.classList.remove("selected");
                   selectedZoneId = null;
                   hideTooltip();
                 }
               }
-              // Ensure events are always enabled for hover interaction
-              cell.style.pointerEvents = "all";
-
-              /* APPLY COLOR */
-              if (data.color && data.color !== "FALSE") {
-                let applyColor = data.color;
-                // Special handling for TRUE as color
-                if (parts[1] === "TRUE") applyColor = "#ffffff";
-
-                cell.style.fill = applyColor;
-                cell.setAttribute("data-colored", "true");
-
-                // Move to team group for collective glow
-                const group = getTeamGroup(applyColor);
-                if (cell.parentNode !== group) {
-                  group.appendChild(cell);
-                }
-              } else {
-                // Reset/Clear color
-                cell.style.fill = "transparent";
-                cell.removeAttribute("data-colored");
-
-                // Move back to main grid (background layer)
-                if (cell.parentNode !== grid) {
-                  grid.insertBefore(cell, grid.firstChild);
-                }
-              }
-
-              /* EMOJI RESOLUTION */
-              let finalEmoji = "";
-
-              // 1. Check Manual Override (Fight State)
-              if (manualStates[zoneid]) {
-                // If Sheet has Color (Fight Finished), Clear Override
-                if (data.color && data.color !== "FALSE") {
-                  delete manualStates[zoneid];
-                } else {
-                  finalEmoji = manualStates[zoneid];
-                }
-              }
-
-              // 2. If No Override, Use Sheet Data
-              if (!finalEmoji) {
-                finalEmoji = parseEmoji(parts[2]);
-              }
-
-              updateEmoji(zoneid, finalEmoji);
             }
 
             teamData[zoneid] = data;
