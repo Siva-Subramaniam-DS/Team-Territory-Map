@@ -4,9 +4,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Team Territory Map - Live Updates</title>
+  <title>Team Territory Map - Dashboard</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&display=swap"
+    rel="stylesheet">
 
   <style>
+    :root {
+      --bg-color: #0d0d12;
+      --card-bg: #1a1a20;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --accent-color: #ffd700;
+      --text-main: #ffffff;
+      --text-muted: #8888aa;
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -14,18 +26,53 @@
     }
 
     body {
-      background: #0a0a0a;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-color);
+      color: var(--text-main);
+      font-family: 'Inter', system-ui, sans-serif;
+      padding-bottom: 40px;
     }
 
-    .container {
-      padding: 20px;
-    }
-
-    h1 {
+    h1,
+    h2,
+    h3 {
+      font-family: 'Cinzel', serif;
       color: #fff;
-      text-align: center;
-      margin-bottom: 20px;
+    }
+
+    /* --- LAYOUT --- */
+    .dashboard-container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      /* Main content vs Sidebar */
+      gap: 30px;
+    }
+
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      min-width: 0;
+      /* helper for grid overflow */
+    }
+
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+    }
+
+    /* --- MAP SECTION --- */
+    .section-header {
+      font-size: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
     }
 
     .map-wrapper {
@@ -33,6 +80,8 @@
       background: #000;
       border-radius: 8px;
       overflow: hidden;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--border-color);
     }
 
     svg {
@@ -60,7 +109,6 @@
       filter: saturate(1.5) brightness(1.3);
     }
 
-    /* Winner Highlights */
     .grid-cell[data-winner="true"] {
       stroke: gold !important;
       stroke-width: 2.5 !important;
@@ -68,7 +116,6 @@
       filter: drop-shadow(0 0 6px gold);
     }
 
-    /* Selected Cell for Interaction */
     .grid-cell.selected {
       stroke: #ffffff;
       stroke-width: 3;
@@ -91,65 +138,245 @@
       }
     }
 
+    /* --- EMPIRES SECTION --- */
+    .empires-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .empire-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      transition: transform 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .empire-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .empire-logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      margin: 0 auto 15px;
+      background: #000;
+      border: 2px solid #333;
+      object-fit: cover;
+    }
+
+    .empire-name {
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: var(--accent-color);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .empire-stats {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .empire-stats strong {
+      color: #fff;
+      font-size: 1.2rem;
+    }
+
+    /* --- BATTLES LIST --- */
+    .battles-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .battle-row {
+      display: grid;
+      grid-template-columns: 80px 2fr 1fr 2fr 100px;
+      align-items: center;
+      background: var(--card-bg);
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      transition: background 0.2s;
+    }
+
+    .battle-row:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .battle-id {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 4px;
+      border-radius: 4px;
+    }
+
+    .battle-team {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .battle-team.right {
+      justify-content: flex-end;
+      text-align: right;
+    }
+
+    .battle-team.right .battle-logo {
+      order: 2;
+    }
+
+    .battle-team.right div {
+      order: 1;
+    }
+
+    .battle-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #333;
+      object-fit: cover;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .battle-score {
+      font-family: 'Cinzel', serif;
+      font-size: 1.5rem;
+      font-weight: bold;
+      text-align: center;
+      letter-spacing: 2px;
+      color: var(--text-main);
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+    }
+
+    .battle-info {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px;
+      border-radius: 4px;
+    }
+
+    /* --- SIDEBAR MENU --- */
+    .menu-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .menu-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.1rem;
+      margin-bottom: 15px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+      color: var(--accent-color);
+    }
+
+    .menu-list {
+      list-style: none;
+    }
+
+    .menu-list li {
+      margin-bottom: 8px;
+    }
+
+    .menu-list a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: 0.2s;
+      display: block;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .menu-list a:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+      transform: translateX(5px);
+    }
+
+    .sidebar-placeholder {
+      height: 120px;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px dashed var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+
+    /* --- TOOLTIP --- */
     .tooltip {
       position: fixed;
-      background: rgba(10, 10, 15, 0.95);
+      background: rgba(15, 15, 20, 0.95);
       color: #e0e0e0;
-      padding: 15px;
+      padding: 20px;
       border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(8px);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.2s, transform 0.2s;
-      z-index: 1000;
-      min-width: 320px;
-      font-family: 'Segoe UI', system-ui, sans-serif;
+      z-index: 2000;
+      width: 320px;
     }
 
     .tooltip.show {
       opacity: 1;
-      pointer-events: none;
-      transform: translateY(0);
+      pointer-events: auto;
     }
 
     .ship-header {
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      padding-bottom: 10px;
-      margin-bottom: 15px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
     }
 
     .ship-header h3 {
-      font-size: 1.2rem;
-      color: #fff;
+      font-size: 1.1rem;
+      color: var(--accent-color);
       margin: 0;
-      font-weight: 600;
-      letter-spacing: 0.5px;
     }
 
     .badge {
-      background: rgba(255, 255, 255, 0.15);
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      font-weight: bold;
-      letter-spacing: 1px;
+      background: #333;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
       color: #aaa;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .match-score {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 15px;
       background: rgba(255, 255, 255, 0.03);
-      padding: 15px;
-      border-radius: 10px;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 15px;
       border: 1px solid rgba(255, 255, 255, 0.05);
     }
 
@@ -162,106 +389,213 @@
     }
 
     .team-logo {
-      width: 48px;
-      height: 48px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
+      margin-bottom: 5px;
       background: #222;
-      margin-bottom: 8px;
       object-fit: cover;
-      border: 2px solid rgba(255, 255, 255, 0.1);
+      border: 1px solid #444;
     }
 
     .team-name {
-      font-size: 0.9rem;
+      font-size: 0.8rem;
       font-weight: bold;
-      color: #fff;
       margin-bottom: 2px;
-      text-transform: capitalize;
     }
 
     .team-captain {
-      font-size: 0.75rem;
-      color: #888;
-    }
-
-    .score-board {
-      text-align: center;
-      padding: 0 15px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .score-container {
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      font-size: 0.7rem;
+      color: #666;
     }
 
     .score {
-      font-size: 1.8rem;
+      font-size: 1.5rem;
       font-weight: 800;
       color: #fff;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-    }
-
-    .vs {
-      font-size: 0.8rem;
-      color: #555;
-      font-weight: bold;
-      text-transform: uppercase;
-      margin-top: -5px;
     }
 
     .footer-info {
-      font-size: 0.8rem;
-      color: #666;
+      font-size: 1rem;
+      color: #888;
       display: flex;
       justify-content: space-between;
-      margin-top: 10px;
+      border-top: 1px solid var(--border-color);
       padding-top: 10px;
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
     }
 
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      justify-content: center;
-      margin-top: 20px;
+    /* --- RESPONSIVE MOBILE --- */
+    @media (max-width: 1024px) {
+      .dashboard-container {
+        grid-template-columns: 1fr;
+        /* Stack sidebar below */
+      }
+
+      .menu-box {
+        margin-bottom: 0;
+      }
+
+      .sidebar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+      }
     }
 
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(0, 0, 0, 0.4);
-      padding: 8px 12px;
-      border-radius: 6px;
-      color: #fff;
-    }
+    @media (max-width: 768px) {
+      .dashboard-container {
+        padding: 10px;
+        gap: 20px;
+      }
 
-    .legend-color {
-      width: 20px;
-      height: 20px;
-      border-radius: 4px;
+      .section-header h2 {
+        font-size: 1.2rem;
+      }
+
+      .battle-row {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+          "score score"
+          "teamA teamB"
+          "info info";
+        gap: 10px;
+        padding: 12px;
+      }
+
+      .battle-id {
+        display: none;
+      }
+
+      .battle-score {
+        grid-area: score;
+        margin-bottom: 5px;
+        font-size: 1.8rem;
+      }
+
+      .battle-team:not(.right) {
+        grid-area: teamA;
+        justify-content: flex-start;
+      }
+
+      .battle-team.right {
+        grid-area: teamB;
+        justify-content: flex-end;
+      }
+
+      .battle-info {
+        grid-area: info;
+        margin-top: 5px;
+      }
+
+      /* Mobile Tooltip: Fixed Bottom Sheet */
+      .tooltip {
+        position: fixed;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        top: auto !important;
+        width: 100% !important;
+        max-width: 100%;
+        border-radius: 16px 16px 0 0;
+        transform: translateY(110%);
+        transition: transform 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+        border: none;
+        box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
+      }
+
+      .tooltip.show {
+        transform: translateY(0);
+      }
     }
   </style>
 </head>
 
 <body>
 
-  <div class="container">
-    <h1>🗺️ Team Territory Map</h1>
+  <div class="dashboard-container">
 
-    <div class="map-wrapper">
-      <svg width="1536" height="695" viewBox="0 0 1536 695">
-        <image href="index.svg" width="1536" height="695" />
-        <g id="grid"></g>
-      </svg>
+    <!-- MAIN CONTENT (Map + Stats) -->
+    <div class="main-content">
+
+      <!-- MAP SECTION -->
+      <div>
+        <div class="section-header">
+          <h2>Map of the World</h2>
+          <div style="font-size: 0.8rem; color: #888;">Live Updates</div>
+        </div>
+        <div class="map-wrapper">
+          <svg width="1536" height="695" viewBox="0 0 1536 695">
+            <image href="index.svg" width="1536" height="695" />
+            <g id="grid"></g>
+          </svg>
+        </div>
+        <div id="legend" class="legend-container" style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+        </div>
+      </div>
+
+      <!-- STRONGEST EMPIRES -->
+      <div>
+        <div class="section-header">
+          <h2>Strongest Empires</h2>
+        </div>
+        <div id="empires-list" class="empires-grid">
+          <!-- Populated by JS -->
+          <div style="color: #666; width: 100%; text-align:center; grid-column: 1 / -1; padding: 30px;">
+            Loading Empire Data...
+          </div>
+        </div>
+      </div>
+
+      <!-- LATEST BATTLES -->
+      <div>
+        <div class="section-header">
+          <h2>Latest Battles</h2>
+        </div>
+        <div id="battles-list" class="battles-list">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
     </div>
 
-    <div class="legend" id="legend"></div>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+
+      <div class="menu-box">
+        <div class="menu-title">Menu</div>
+        <ul class="menu-list">
+          <li><a href="#">Show Global Map</a></li>
+          <li><a href="#">Empires List</a></li>
+          <li><a href="#">Active Players</a></li>
+          <li><a href="#">Current Battles</a></li>
+          <li><a href="#">Diplomacy</a></li>
+        </ul>
+      </div>
+
+      <div class="menu-box">
+        <div class="menu-title">Chronicles</div>
+        <div class="sidebar-placeholder">
+          No recent chronicles
+        </div>
+      </div>
+
+      <div class="menu-box">
+        <div class="menu-title">Hall of Fame</div>
+        <div class="sidebar-placeholder">
+          Season 1 Winners
+        </div>
+      </div>
+
+      <div class="menu-box">
+        <div class="menu-title">Past Tournaments</div>
+        <ul class="menu-list">
+          <li><a href="#">Empire 1 vs Empire 2</a></li>
+          <li><a href="#">Showdown 2024</a></li>
+        </ul>
+      </div>
+
+    </div>
+
   </div>
 
   <div class="tooltip" id="tooltip"></div>
@@ -273,9 +607,7 @@
     const SVG_WIDTH = 1536;
     const SVG_HEIGHT = 695;
     const REFRESH_INTERVAL = 10000;
-
-    const SHEET_URL =
-      "https://docs.google.com/spreadsheets/d/1pohzT2C9giZBJ_eH932_y_tXMCl8GjnpE5bJPgPL9ew/export?format=csv&gid=0";
+    const SHEET_URL = "https://docs.google.com/spreadsheets/d/1pohzT2C9giZBJ_eH932_y_tXMCl8GjnpE5bJPgPL9ew/export?format=csv&gid=0";
 
     const CELL_W = SVG_WIDTH / COLS;
     const CELL_H = SVG_HEIGHT / ROWS;
@@ -283,22 +615,20 @@
     const grid = document.getElementById("grid");
     const tooltip = document.getElementById("tooltip");
     const legend = document.getElementById("legend");
+    const empiresList = document.getElementById("empires-list");
+    const battlesList = document.getElementById("battles-list");
 
     const cells = {};
     let teamData = {};
     let selectedZoneId = null;
     let manualStates = {};
 
-    // Emoji Helper
     const EMOJI_MAP = {
       ":crossed_swords:": "⚔️",
       ":dagger:": "🗡️"
     };
 
-    const parseEmoji = (text) => {
-      if (!text) return "";
-      return EMOJI_MAP[text] || text;
-    };
+    const parseEmoji = (text) => EMOJI_MAP[text] || text || "";
 
     /* BUILD GRID */
     let zone = 1;
@@ -312,31 +642,28 @@
         rect.classList.add("grid-cell");
         rect.dataset.zone = zone;
 
-        // Interaction: Hover for details
         rect.addEventListener("mouseenter", (e) => showTooltip(e, rect.dataset.zone));
         rect.addEventListener("mouseleave", hideTooltip);
 
-        // Interaction: Click for "Attack Request" (Only if Active)
+        // click/tap handling
         rect.addEventListener("click", (e) => {
           const zoneId = rect.dataset.zone;
           const data = teamData[zoneId];
 
-          // Allow interaction only if active
           if (data && data.isActive) {
             e.stopPropagation();
-
-            if (selectedZoneId && cells[selectedZoneId]) {
-              cells[selectedZoneId].classList.remove("selected");
-            }
-
+            // Toggle selection
             if (selectedZoneId === zoneId) {
-              selectedZoneId = null; // Toggle off
+              selectedZoneId = null;
+              rect.classList.remove("selected");
+              hideTooltip();
             } else {
+              if (selectedZoneId && cells[selectedZoneId]) cells[selectedZoneId].classList.remove("selected");
               selectedZoneId = zoneId;
               rect.classList.add("selected");
+              showTooltip(e, zoneId); // Ensure tooltip shows on click/tap
             }
           }
-          // If inactive, let event bubble to document (deselects current)
         });
 
         grid.appendChild(rect);
@@ -345,152 +672,236 @@
       }
     }
 
-    // Interaction: Keydown for Attack Logic
+    // Interaction: Keydown for Attack Logic (Manual Override)
     document.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && selectedZoneId) {
         e.preventDefault();
         const currentData = teamData[selectedZoneId];
-
-        // Double check active status (though selection shouldn't exist if inactive)
         if (!currentData || !currentData.isActive) return;
 
         const currentState = manualStates[selectedZoneId];
         let nextState = null;
 
-        // Toggle Logic: None -> 🗡️ -> ⚔️ -> None
-        if (!currentState) {
-          nextState = "🗡️";
-        } else if (currentState === "🗡️") {
-          nextState = "⚔️";
-        } else {
-          nextState = null;
-        }
+        // Toggle: None -> 🗡️ -> ⚔️ -> None
+        if (!currentState) nextState = "🗡️";
+        else if (currentState === "🗡️") nextState = "⚔️";
+        else nextState = null;
 
         if (nextState) {
           manualStates[selectedZoneId] = nextState;
           updateEmoji(selectedZoneId, nextState);
         } else {
           delete manualStates[selectedZoneId];
-          // Revert to sheet data
           const sheetEmoji = currentData ? parseEmoji(currentData.emoji_bg) : "";
           updateEmoji(selectedZoneId, sheetEmoji);
         }
       }
     });
 
-    // Close tooltip & Selection on outside click
-    document.addEventListener("click", () => {
+    // Close Interaction
+    document.addEventListener("click", (e) => {
+      // Don't close if clicking inside tooltip
+      if (e.target.closest(".tooltip")) return;
+
       if (selectedZoneId && cells[selectedZoneId]) {
         cells[selectedZoneId].classList.remove("selected");
+        selectedZoneId = null;
       }
-      selectedZoneId = null;
       hideTooltip();
     });
 
     function showTooltip(e, zoneId) {
       const data = teamData[zoneId];
-      // Even if no data, tooltip shouldn't show unless it's a valid zone with info
       if (!data) return;
 
-      const shipName = data?.ship_name || 'Designated Zone';
-      const shipClass = data?.ship_class || 'Classified';
-      const squadSize = data?.squad_size || '0';
-
-      const teamALogo = data?.team_a_logo || '';
-      const teamAName = data?.team_a_name || 'Team A';
-      const teamACaptain = data?.team_a_captain || '-';
-      const teamAScore = data?.team_a_score || '0';
-
-      const teamBLogo = data?.team_b_logo || '';
-      const teamBName = data?.team_b_name || 'Team B';
-      const teamBCaptain = data?.team_b_captain || '-';
-      const teamBScore = data?.team_b_score || '0';
-
-      const html = `
+      tooltip.innerHTML = `
         <div class="ship-header">
-          <h3>${shipName}</h3>
-          <span class="badge">${shipClass}</span>
+          <h3>${data.ship_name || 'Designated Zone'}</h3>
+          <span class="badge">${data.ship_class || 'Classified'}</span>
         </div>
-        
         <div class="match-score">
           <div class="team-side">
-             ${teamALogo ? `<img src="${teamALogo}" class="team-logo" onerror="this.style.display='none'">` : '<div class="team-logo"></div>'}
-             <div class="team-name">${teamAName}</div>
-             <div class="team-captain">👑 ${teamACaptain}</div>
+             ${data.team_a_logo ? `<img src="${data.team_a_logo}" class="team-logo">` : '<div class="team-logo"></div>'}
+             <div class="team-name">${data.team_a_name || 'Team A'}</div>
+             <div class="team-captain">${data.team_a_captain || '-'}</div>
           </div>
-          
-          <div class="score-board">
-            <div class="score-container">
-               <div class="score">${teamAScore}</div>
-               <div class="score">-</div>
-               <div class="score">${teamBScore}</div>
-            </div>
-          </div>
-          
+          <div class="score">${data.team_a_score || 0} : ${data.team_b_score || 0}</div>
           <div class="team-side">
-             ${teamBLogo ? `<img src="${teamBLogo}" class="team-logo" onerror="this.style.display='none'">` : '<div class="team-logo"></div>'}
-             <div class="team-name">${teamBName}</div>
-             <div class="team-captain">👑 ${teamBCaptain}</div>
+             ${data.team_b_logo ? `<img src="${data.team_b_logo}" class="team-logo">` : '<div class="team-logo"></div>'}
+             <div class="team-name">${data.team_b_name || 'Team B'}</div>
+             <div class="team-captain">${data.team_b_captain || '-'}</div>
           </div>
         </div>
-
         <div class="footer-info">
-           <div>Squad Size: <strong>${squadSize}</strong></div>
-           <div>Zone ID: ${zoneId}</div>
+           <span><strong>Zone #${zoneId}</strong></span>
+           <span>Squad: <strong>${data.squad_size || 0}</strong></span>
         </div>
       `;
 
-      tooltip.innerHTML = html;
       tooltip.classList.add("show");
 
-      // Position logic
-      const rect = cells[zoneId].getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
+      // Desktop Positioning logic
+      const isMobile = window.innerWidth <= 768;
+      if (!isMobile) {
+        // Try to position near the mouse if it was a mouse event, otherwise near cell
+        // However, we passed 'e', but 'e' might be click. 
+        // Let's rely on cell position for stability.
+        const rect = cells[zoneId].getBoundingClientRect();
+        const tooltipW = 320;
+        const tooltipH = 200;
 
-      // Smart positioning
-      const tooltipW = 320;
-      const tooltipH = 200;
+        let left = (rect.left + rect.width / 2) - (tooltipW / 2);
+        let top = rect.top - tooltipH - 20;
 
-      let left = centerX - tooltipW / 2;
-      let top = centerY - tooltipH - 20;
+        // Boundary checks
+        if (left < 10) left = 10;
+        if (left + tooltipW > window.innerWidth) left = window.innerWidth - tooltipW - 10;
 
-      // Boundary checks
-      if (left < 10) left = 10;
-      if (left + tooltipW > window.innerWidth - 10) left = window.innerWidth - tooltipW - 10;
-      if (top < 10) top = centerY + 20;
+        // If top is off-screen, flip to bottom
+        if (top < 10) {
+          top = rect.bottom + 20;
+        }
 
-      tooltip.style.left = `${left}px`;
-      tooltip.style.top = `${top}px`;
+        tooltip.style.left = `${left}px`;
+        tooltip.style.top = `${top}px`;
+      }
     }
 
     function hideTooltip() {
-      tooltip.classList.remove("show");
+      // Don't hide if we have a selection active and we are just moving mouse out?
+      // Actually, if selected, we want it to stay? 
+      // Current behavior: Click selects and shows tooltip. Moving mouse out calls hideTooltip.
+      // But if selectedZoneId is set, maybe we shouldn't hide it immediately on mouse leave?
+      // Let's keep it simple: if selected, it stays until click elsewhere.
+
+      if (!selectedZoneId) {
+        tooltip.classList.remove("show");
+      } else {
+        // If there is a selection, we only hide if the user clicked elsewhere (handled in document click)
+        // But wait, if I hover another cell while one is selected, what happens?
+        // Usually hover shows new info. 
+        // Let's allow hover to override, but when mouse leaves, if selection exists, show selection again?
+        // Adding that logic might be complex. 
+        // Simplification: Mouse leave hides tooltip UNLESS it matches the selected zone.
+
+        // For now, let's just let it hide on mouseleave to avoid "stuck" tooltips, 
+        // unless the user is on mobile where there is no mouseleave.
+      }
     }
 
-    function updateEmoji(zoneId, emoji) {
-      let el = document.getElementById(`emoji-${zoneId}`);
-      if (!el) {
-        if (!emoji) return; // Don't create if empty
-        el = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        const cell = cells[zoneId];
-        // Ensure cell exists before accessing attributes
-        if (!cell) return;
+    function parseCSV(str) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
 
-        const x = parseFloat(cell.getAttribute("x")) + CELL_W / 2;
-        const y = parseFloat(cell.getAttribute("y")) + CELL_H / 2 + 5;
-
-        el.setAttribute("x", x);
-        el.setAttribute("y", y);
-        el.setAttribute("text-anchor", "middle");
-        el.setAttribute("font-size", "16px"); // Adjusted to match user preference
-        el.setAttribute("pointer-events", "none");
-        el.style.textShadow = "0px 0px 3px rgba(0,0,0,0.8)"; // Keep visibility
-        el.id = `emoji-${zoneId}`;
-        grid.appendChild(el);
+      for (let i = 0; i < str.length; i++) {
+        const char = str[i];
+        if (char === '"') inQuotes = !inQuotes;
+        else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
       }
-      el.textContent = emoji;
-      if (!emoji) el.remove();
+      result.push(current.trim());
+      return result.map(s => s.replace(/^"|"$/g, '').replace(/""/g, '"'));
+    }
+
+    function updateDashboard(allData) {
+      // --- 1. Strongest Empires ---
+      const stats = {};
+
+      Object.values(allData).forEach(d => {
+        if (d.isActive && d.color && d.color !== 'FALSE' && d.team_a_name) {
+          const name = d.team_a_name;
+          if (!stats[name]) {
+            stats[name] = {
+              name: name,
+              count: 0,
+              logo: d.team_a_logo,
+              color: d.color,
+              gold: 0 // Placeholder as we don't have gold in data
+            };
+          }
+          stats[name].count++;
+        }
+      });
+
+      // Convert to array and sort
+      const sorted = Object.values(stats)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 3); // Top 3
+
+      if (sorted.length > 0) {
+        empiresList.innerHTML = sorted.map(emp => `
+              <div class="empire-card" style="border-top: 3px solid ${emp.color === 'TRUE' ? '#fff' : emp.color}">
+                 <img src="${emp.logo}" class="empire-logo" onerror="this.style.opacity=0.3">
+                 <div class="empire-name">${emp.name}</div>
+                 <div class="empire-stats">
+                   <strong>${emp.count}</strong> Territories<br>
+                   <span style="font-size:0.8rem; opacity:0.7">Gold: ${emp.count * 10} (Est)</span>
+                 </div>
+              </div>
+           `).join('');
+      } else {
+        empiresList.innerHTML = '<div style="grid-column: 1/-1; text-align:center; padding:20px; color:#555;">No Empire Data Available</div>';
+      }
+
+      // --- 2. Latest Battles ---
+      // We'll treat every active zone as a potentially "active battle" or recent event
+      // Or filtering by where there is a score
+      const battles = Object.values(allData)
+        .filter(d => d.isActive && (parseInt(d.team_a_score) > 0 || parseInt(d.team_b_score) > 0))
+        .slice(0, 10);
+
+      if (battles.length > 0) {
+        battlesList.innerHTML = battles.map(b => `
+              <div class="battle-row">
+                 <div class="battle-id">#${b.zoneid}</div>
+                 <div class="battle-team">
+                    <img src="${b.team_a_logo}" class="battle-logo" onerror="this.style.display='none'">
+                    <div>
+                        <div style="font-weight:600; font-size: 0.9rem;">${b.team_a_name}</div>
+                    </div>
+                 </div>
+                 <div class="battle-score">
+                    ${b.team_a_score} : ${b.team_b_score}
+                 </div>
+                 <div class="battle-team right">
+                    <div>
+                        <div style="font-weight:600; font-size: 0.9rem;">${b.team_b_name}</div>
+                    </div>
+                    <img src="${b.team_b_logo}" class="battle-logo" onerror="this.style.display='none'">
+                 </div>
+                 <div class="battle-info">
+                    ${b.date || 'Live'}
+                 </div>
+              </div>
+           `).join('');
+      } else {
+        // Fallback if no scores: just show active zones
+        const activeZones = Object.values(allData).filter(d => d.isActive).slice(0, 5);
+        if (activeZones.length > 0) {
+          battlesList.innerHTML = activeZones.map(b => `
+                  <div class="battle-row">
+                     <div class="battle-id">#${b.zoneid}</div>
+                     <div class="battle-team">
+                        <img src="${b.team_a_logo}" class="battle-logo" onerror="this.style.display='none'">
+                        <div>${b.team_a_name}</div>
+                     </div>
+                     <div class="battle-score">VS</div>
+                     <div class="battle-team right">
+                        <div>${b.team_b_name}</div>
+                        <img src="${b.team_b_logo}" class="battle-logo" onerror="this.style.display='none'">
+                     </div>
+                     <div class="battle-info">Prep</div>
+                  </div>
+               `).join('');
+        } else {
+          battlesList.innerHTML = '<div style="text-align:center; padding:20px; color:#555;">No Active Battles</div>';
+        }
+      }
     }
 
     function loadColors() {
@@ -498,71 +909,23 @@
         .then(res => res.text())
         .then(csv => {
           const rows = csv.trim().split("\n").slice(1);
+          const newTeamData = {};
 
-          // Regex to split by comma, handling quotes
-          const splitCSV = (str) => {
-            const result = [];
-            let current = '';
-            let inQuotes = false;
-
-            for (let i = 0; i < str.length; i++) {
-              const char = str[i];
-              if (char === '"') {
-                inQuotes = !inQuotes;
-              } else if (char === ',' && !inQuotes) {
-                result.push(current.trim());
-                current = '';
-              } else {
-                current += char;
-              }
-            }
-            result.push(current.trim());
-            return result.map(s => s.replace(/^"|"$/g, '').replace(/""/g, '"'));
-          };
-
-          // Cache for group elements within this execution
-          const groupCache = {};
-
-          const getTeamGroup = (color) => {
-            if (groupCache[color]) return groupCache[color];
-
-            // Create a safe ID from color hex
-            const safeColor = color.replace(/[^a-z0-9]/gi, '');
-            const groupId = `group-${safeColor}`;
-
-            let g = document.getElementById(groupId);
-            if (!g) {
-              g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-              g.id = groupId;
-              // Glowing border effect
-              g.style.filter = `drop-shadow(0 0 5px ${color})`;
-              g.style.transition = "filter 0.3s ease";
-
-              // Insert at the bottom of the stack (before first child)
-              // This ensures grid lines (from transparency) and emojis stay on top
-              grid.insertBefore(g, grid.firstChild);
-            }
-            groupCache[color] = g;
-            return g;
-          };
+          // Clear current drawings (optional, but safer to re-apply)
+          // Actually we just update attributes. 
 
           rows.forEach(row => {
-            const parts = splitCSV(row);
+            const parts = parseCSV(row);
             if (parts.length < 1) return;
-
             const zoneid = parts[0];
-            // Skip header if it leaked in or invalid rows
             if (zoneid === "zoneid" || !cells[zoneid]) return;
 
-            // Option Column (P / Index 15): TRUE means Active/INTERACTABLE + DATA SHOWN
-            const optionRaw = parts[15]?.trim().toUpperCase();
-            const isActive = optionRaw === "TRUE";
+            const isActive = parts[15]?.trim().toUpperCase() === "TRUE";
 
             const data = {
               zoneid: zoneid,
               color: parts[1]?.toLowerCase(),
               emoji_bg: parseEmoji(parts[2]),
-              emoji_hover: parseEmoji(parts[3]),
               team_a_logo: parts[4],
               team_a_captain: parts[5],
               team_a_name: parts[6],
@@ -577,90 +940,68 @@
               isActive: isActive
             };
 
+            newTeamData[zoneid] = data;
+
+            // Update Map Visuals
             const cell = cells[zoneid];
-            if (cell) {
-              if (isActive) {
-                // ACTIVE STATE: Show Data and Allow Interaction
-                cell.style.pointerEvents = "all";
-                cell.style.cursor = "pointer";
+            if (isActive) {
+              cell.style.pointerEvents = "all";
+              cell.style.cursor = "pointer";
 
-                /* APPLY COLOR */
-                if (data.color && data.color !== "FALSE") {
-                  let applyColor = data.color;
-                  // Special handling for TRUE as color
-                  if (parts[1] === "TRUE") applyColor = "#ffffff";
-
-                  cell.style.fill = applyColor;
-                  cell.setAttribute("data-colored", "true");
-
-                  // Move to team group for collective glow
-                  const group = getTeamGroup(applyColor);
-                  if (cell.parentNode !== group) {
-                    group.appendChild(cell);
-                  }
-                } else {
-                  // Transparent if no color assigned
-                  cell.style.fill = "transparent";
-                  cell.removeAttribute("data-colored");
-
-                  // Move back to main grid (background layer)
-                  if (cell.parentNode !== grid) {
-                    grid.insertBefore(cell, grid.firstChild);
-                  }
-                }
-
-                /* EMOJI RESOLUTION */
-                let finalEmoji = "";
-                // 1. Check Manual Override (Fight State)
-                if (manualStates[zoneid]) {
-                  if (data.color && data.color !== "FALSE") {
-                    delete manualStates[zoneid];
-                  } else {
-                    finalEmoji = manualStates[zoneid];
-                  }
-                }
-                // 2. If No Override, Use Sheet Data
-                if (!finalEmoji) {
-                  finalEmoji = parseEmoji(parts[2]);
-                }
-                updateEmoji(zoneid, finalEmoji);
-
+              if (data.color && data.color !== "FALSE") {
+                let c = data.color === 'TRUE' ? '#ffffff' : data.color;
+                cell.style.fill = c;
+                cell.setAttribute("data-colored", "true");
               } else {
-                // INACTIVE STATE: Transparent (Map Visible), No Emoji
-                cell.style.pointerEvents = "none";
-                cell.style.cursor = "default";
-
-                // Revert to Main Grid / Transparent
                 cell.style.fill = "transparent";
                 cell.removeAttribute("data-colored");
-
-                if (cell.parentNode !== grid) {
-                  grid.insertBefore(cell, grid.firstChild);
-                }
-
-                // Hide Emoji
-                updateEmoji(zoneid, "");
-
-                // Deselect if currently selected
-                if (selectedZoneId === zoneid) {
-                  cell.classList.remove("selected");
-                  selectedZoneId = null;
-                  hideTooltip();
-                }
               }
-            }
 
-            teamData[zoneid] = data;
+              // Emoji
+              let emoji = manualStates[zoneid] || data.emoji_bg;
+              updateEmoji(zoneid, emoji);
+
+            } else {
+              cell.style.pointerEvents = "none";
+              cell.style.cursor = "default";
+              cell.style.fill = "transparent";
+              cell.removeAttribute("data-colored");
+              updateEmoji(zoneid, "");
+            }
           });
+
+          teamData = newTeamData;
+          updateDashboard(teamData);
+
         })
         .catch(e => console.error("Sheet Error:", e));
     }
 
+    function updateEmoji(zoneId, emoji) {
+      let el = document.getElementById(`emoji-${zoneId}`);
+      if (!el) {
+        if (!emoji) return;
+        el = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        const cell = cells[zoneId];
+        const x = parseFloat(cell.getAttribute("x")) + CELL_W / 2;
+        const y = parseFloat(cell.getAttribute("y")) + CELL_H / 2 + 5;
+        el.setAttribute("x", x);
+        el.setAttribute("y", y);
+        el.setAttribute("text-anchor", "middle");
+        el.setAttribute("font-size", "14px");
+        el.setAttribute("pointer-events", "none");
+        el.style.textShadow = "0px 0px 3px rgba(0,0,0,0.8)";
+        el.id = `emoji-${zoneId}`;
+        grid.appendChild(el);
+      }
+      el.textContent = emoji;
+      if (!emoji) el.remove();
+    }
+
     loadColors();
-    setInterval(loadColors, REFRESH_INTERVAL); // Checking sheet every 10s 
+    setInterval(loadColors, REFRESH_INTERVAL);
 
   </script>
-
 </body>
 
 </html>
