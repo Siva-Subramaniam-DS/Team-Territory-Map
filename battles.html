@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Battle Archive - AI Survivor</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Inter:wght@300;400;600;800&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #0d0d12;
+            --card-bg: #1a1a20;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --accent-color: #ffd700;
+            --text-main: #ffffff;
+            --text-muted: #8888aa;
+            --row-hover: rgba(255, 255, 255, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Inter', system-ui, sans-serif;
+            padding-bottom: 40px;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Cinzel', serif;
+            color: #fff;
+        }
+
+        /* --- LAYOUT --- */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .page-header {
+            margin-bottom: 40px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 2.5rem;
+            color: var(--text-main);
+        }
+
+        .back-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: #fff;
+        }
+
+        /* --- ARCHIVE LIST --- */
+        .archive-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .battle-row {
+            display: grid;
+            grid-template-columns: 120px 1fr 180px;
+            background: var(--card-bg);
+            border: 1px dashed var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        .battle-row:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Column 1: ID & Date */
+        .col-meta {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            border-right: 1px dashed var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .battle-id {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            /* Highlight ID */
+            margin-bottom: 4px;
+        }
+
+        /* Column 2: The Matchup */
+        .col-match {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 30px;
+        }
+
+        .competitor {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 40%;
+        }
+
+        .competitor.right {
+            justify-content: flex-end;
+            text-align: right;
+            flex-direction: row-reverse;
+            /* Flip order for right side */
+        }
+
+        .comp-logo {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #000;
+            border: 2px solid #333;
+            object-fit: cover;
+        }
+
+        .comp-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .comp-name {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #fff;
+        }
+
+        .comp-team {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .match-score {
+            font-family: 'Cinzel', serif;
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--text-main);
+            padding: 0 20px;
+        }
+
+        /* Column 3: Details */
+        .col-details {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            border-left: 1px dashed var(--border-color);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            background: rgba(0, 0, 0, 0.2);
+            text-align: center;
+            gap: 4px;
+        }
+
+        .detail-highlight {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .battle-row {
+                grid-template-columns: 80px 1fr;
+                grid-template-rows: auto auto;
+            }
+
+            .col-details {
+                grid-column: 1 / -1;
+                border-left: none;
+                border-top: 1px dashed var(--border-color);
+                flex-direction: row;
+                gap: 20px;
+                padding: 10px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .battle-row {
+                grid-template-columns: 1fr;
+            }
+
+            .col-match {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .competitor,
+            .competitor.right {
+                width: 100%;
+                justify-content: center;
+                flex-direction: column;
+                /* Stack logo and name on mobile */
+                text-align: center;
+            }
+
+            .col-meta {
+                border-right: none;
+                border-bottom: 1px dashed var(--border-color);
+                flex-direction: row;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">Battle Archive</h1>
+            <a href="index.html" class="back-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                Back to Map
+            </a>
+        </div>
+
+        <div id="archive-list" class="archive-list">
+            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                Loading Archives...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SHEET_URL = "https://docs.google.com/spreadsheets/d/1pohzT2C9giZBJ_eH932_y_tXMCl8GjnpE5bJPgPL9ew/export?format=csv&gid=0";
+        const archiveList = document.getElementById("archive-list");
+
+        const EMOJI_MAP = {
+            ":crossed_swords:": "⚔️",
+            ":dagger:": "🗡️"
+        };
+        const parseEmoji = (text) => EMOJI_MAP[text] || text || "";
+
+        // CSV Parser
+        function parseCSV(str) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < str.length; i++) {
+                const char = str[i];
+                if (char === '"') inQuotes = !inQuotes;
+                else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            return result.map(s => s.replace(/^"|"$/g, '').replace(/""/g, '"'));
+        }
+
+        function renderBattles(data) {
+            // Filter valid battles (Active or have score)
+            const battles = data.filter(d =>
+                d.isActive ||
+                (parseInt(d.team_a_score) > 0 || parseInt(d.team_b_score) > 0)
+            );
+
+            if (battles.length === 0) {
+                archiveList.innerHTML = '<div style="text-align:center; padding: 40px; color: #666;">No battles recorded yet.</div>';
+                return;
+            }
+
+            archiveList.innerHTML = battles.map(b => {
+                // Mock Date if unavailable (using random past date for demo feel if needed, or today)
+                // In a real scenario, we'd want a 'date' column.
+                const date = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
+
+                return `
+            <div class="battle-row">
+                <!-- COL 1: Meta -->
+                <div class="col-meta">
+                    <div class="battle-id">${b.zoneid}</div>
+                    <div style="opacity: 0.6">${date}</div>
+                </div>
+
+                <!-- COL 2: Matchup -->
+                <div class="col-match">
+                    <!-- Left Team -->
+                    <div class="competitor">
+                        <img src="${b.team_a_logo}" class="comp-logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgZmlsbD0iIzMzMyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIvPjwvc3ZnPg=='">
+                        <div class="comp-info">
+                            <div class="comp-name">${b.team_a_captain || b.team_a_name || 'Unknown'}</div>
+                            <div class="comp-team">${b.team_a_name}</div>
+                        </div>
+                    </div>
+
+                    <!-- Score -->
+                    <div class="match-score">
+                        ${b.team_a_score || 0}:${b.team_b_score || 0}
+                    </div>
+
+                    <!-- Right Team -->
+                    <div class="competitor right">
+                         <img src="${b.team_b_logo}" class="comp-logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgZmlsbD0iIzMzMyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIvPjwvc3ZnPg=='">
+                        <div class="comp-info">
+                            <div class="comp-name">${b.team_b_captain || b.team_b_name || 'Unknown'}</div>
+                            <div class="comp-team">${b.team_b_name}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COL 3: Details -->
+                <div class="col-details">
+                    <div class="detail-highlight">${b.ship_name || 'Unknown Zone'}</div>
+                    <div>${b.squad_size || 'Unknown Size'}</div>
+                    <div style="font-size:0.75rem; opacity:0.5; margin-top:4px;">${b.ship_class || 'N/A'}</div>
+                </div>
+            </div>
+        `}).join('');
+        }
+
+        function loadData() {
+            fetch(SHEET_URL + "&t=" + Date.now())
+                .then(res => res.text())
+                .then(csv => {
+                    const rows = csv.trim().split("\n").slice(1);
+                    const battles = [];
+
+                    rows.forEach(row => {
+                        const parts = parseCSV(row);
+                        if (parts.length < 1) return;
+                        const zoneid = parts[0];
+                        if (zoneid === "zoneid") return;
+
+                        const isActive = parts[15]?.trim().toUpperCase() === "TRUE";
+
+                        // Only add if it has some teams
+                        if (!parts[6] && !parts[9]) return;
+
+                        battles.push({
+                            zoneid: zoneid,
+                            team_a_logo: parts[4],
+                            team_a_captain: parts[5],
+                            team_a_name: parts[6],
+                            team_a_score: parts[7],
+                            team_b_score: parts[8],
+                            team_b_name: parts[9],
+                            team_b_captain: parts[10],
+                            team_b_logo: parts[11],
+                            ship_name: parts[12],
+                            ship_class: parts[13],
+                            squad_size: parts[14],
+                            isActive: isActive
+                        });
+                    });
+
+                    renderBattles(battles);
+                })
+                .catch(e => {
+                    console.error("Error", e);
+                    archiveList.innerHTML = '<div style="color:red; text-align:center;">Failed to load data.</div>';
+                });
+        }
+
+        loadData();
+
+    </script>
+</body>
+
+</html>
