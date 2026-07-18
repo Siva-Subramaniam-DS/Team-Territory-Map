@@ -326,42 +326,100 @@
                         const zoneid = parts[0];
                         if (zoneid === "zoneid") return;
 
-                        const teamName = parts[6];
-                        const teamLogo = parts[4];
-                        const captain = parts[5];
+                        const teamNameA = parts[6];
+                        const teamLogoA = parts[4];
+                        const captainA = parts[5];
+                        const scoreA = parseInt(parts[7]) || 0;
+
+                        const teamNameB = parts[9];
+                        const teamLogoB = parts[11];
+                        const captainB = parts[10];
+                        const scoreB = parseInt(parts[8]) || 0;
+
                         const isActive = parts[15]?.trim().toUpperCase() === "TRUE";
 
-                        if (!teamName) return;
+                        const initEmpire = (name, logo) => {
+                            if (!empires[name]) {
+                                empires[name] = {
+                                    name: name,
+                                    logo: logo,
+                                    territories: 0,
+                                    captains: new Set(),
+                                    activePlayers: new Set(),
+                                    totalBattles: 0,
+                                    victories: 0,
+                                    playerStats: {}
+                                };
+                            }
+                        };
 
-                        if (!empires[teamName]) {
-                            empires[teamName] = {
-                                name: teamName,
-                                logo: teamLogo,
-                                territories: 0,
-                                captains: new Set(),
-                                activePlayers: new Set(),
-                                totalBattles: 0,
-                                victories: 0,
-                                playerStats: {}
-                            };
+                        if (teamNameA) initEmpire(teamNameA, teamLogoA);
+                        if (teamNameB) initEmpire(teamNameB, teamLogoB);
+
+                        if (teamNameA) {
+                            const emp = empires[teamNameA];
+                            emp.totalBattles++;
+                            if (captainA) {
+                                emp.captains.add(captainA);
+                                if (!emp.playerStats[captainA]) {
+                                    emp.playerStats[captainA] = { v: 0, b: 0 };
+                                }
+                                emp.playerStats[captainA].b++;
+                            }
                         }
 
-                        const emp = empires[teamName];
+                        if (teamNameB) {
+                            const emp = empires[teamNameB];
+                            emp.totalBattles++;
+                            if (captainB) {
+                                emp.captains.add(captainB);
+                                if (!emp.playerStats[captainB]) {
+                                    emp.playerStats[captainB] = { v: 0, b: 0 };
+                                }
+                                emp.playerStats[captainB].b++;
+                            }
+                        }
 
                         if (isActive) {
-                            emp.territories++;
-                            emp.victories++;
-                        }
-
-                        emp.totalBattles++;
-
-                        if (captain) {
-                            emp.captains.add(captain);
-                            if (!emp.playerStats[captain]) {
-                                emp.playerStats[captain] = { v: 0, b: 0 };
+                            if (teamNameA && teamNameB) {
+                                if (scoreA > scoreB) {
+                                    empires[teamNameA].territories++;
+                                    empires[teamNameA].victories++;
+                                    if (captainA) {
+                                        empires[teamNameA].playerStats[captainA].v++;
+                                        empires[teamNameA].activePlayers.add(captainA);
+                                    }
+                                } else if (scoreB > scoreA) {
+                                    empires[teamNameB].territories++;
+                                    empires[teamNameB].victories++;
+                                    if (captainB) {
+                                        empires[teamNameB].playerStats[captainB].v++;
+                                        empires[teamNameB].activePlayers.add(captainB);
+                                    }
+                                } else {
+                                    // Tie/equal, default to team A for compatibility
+                                    empires[teamNameA].territories++;
+                                    empires[teamNameA].victories++;
+                                    if (captainA) {
+                                        empires[teamNameA].playerStats[captainA].v++;
+                                        empires[teamNameA].activePlayers.add(captainA);
+                                    }
+                                }
+                            } else if (teamNameA) {
+                                empires[teamNameA].territories++;
+                                empires[teamNameA].victories++;
+                                if (captainA) {
+                                    empires[teamNameA].playerStats[captainA].v++;
+                                    empires[teamNameA].activePlayers.add(captainA);
+                                }
+                            } else if (teamNameB) {
+                                empires[teamNameB].territories++;
+                                empires[teamNameB].victories++;
+                                if (captainB) {
+                                    empires[teamNameB].playerStats[captainB].v++;
+                                    empires[teamNameB].activePlayers.add(captainB);
+                                }
                             }
-                            emp.playerStats[captain].b++;
-                            if (isActive) emp.playerStats[captain].v++;
                         }
                     });
 
@@ -439,7 +497,7 @@
                     
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 15px; color: #aaa; font-size: 0.9rem;">
                          <div>Total Players: <strong style="color: #fff">${emp.captains.size}</strong></div>
-                         <div>Active Players: <strong style="color: #fff">${emp.captains.size}</strong></div>
+                         <div>Active Players: <strong style="color: #fff">${emp.activePlayers.size}</strong></div>
                          <div>Total Battles: <strong style="color: #fff">${emp.totalBattles}</strong></div>
                          <div>Victories: <strong style="color: #fff">${emp.victories}</strong></div>
                          <div>Territories: <strong style="color: #fff">${emp.territories}</strong></div>

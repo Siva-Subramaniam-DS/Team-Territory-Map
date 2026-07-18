@@ -140,6 +140,11 @@
             /* Flip order for right side */
         }
 
+        .competitor.right .comp-info {
+            align-items: flex-end;
+            text-align: right;
+        }
+
         .comp-logo {
             width: 48px;
             height: 48px;
@@ -290,11 +295,13 @@
         }
 
         function renderBattles(data) {
-            // Filter valid battles (Active or have score)
-            const battles = data.filter(d =>
-                d.isActive ||
-                (parseInt(d.team_a_score) > 0 || parseInt(d.team_b_score) > 0)
-            );
+            // Filter valid battles (Active or have score) and sort descending by zoneid (latest top)
+            const battles = data
+                .filter(d =>
+                    d.isActive ||
+                    (parseInt(d.team_a_score) > 0 || parseInt(d.team_b_score) > 0)
+                )
+                .sort((a, b) => parseInt(b.zoneid) - parseInt(a.zoneid));
 
             if (battles.length === 0) {
                 archiveList.innerHTML = '<div style="text-align:center; padding: 40px; color: #666;">No battles recorded yet.</div>';

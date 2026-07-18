@@ -645,7 +645,7 @@
         <ul class="menu-list">
           <li><a href="#">Show Global Map</a></li>
           <li><a href="empires.html">Empires List</a></li>
-          <li><a href="#">Active Players</a></li>
+          <li><a href="players.html">Active Players</a></li>
           <li><a href="battles.html">Battle Archive</a></li>
           <li><a href="#">Diplomacy</a></li>
         </ul>
@@ -892,18 +892,43 @@
       const stats = {};
 
       Object.values(allData).forEach(d => {
-        if (d.isActive && d.color && d.color !== 'FALSE' && d.team_a_name) {
-          const name = d.team_a_name;
-          if (!stats[name]) {
-            stats[name] = {
-              name: name,
-              count: 0,
-              logo: d.team_a_logo,
-              color: d.color,
-              gold: 0 // Placeholder as we don't have gold in data
-            };
+        if (d.isActive && d.color && d.color !== 'FALSE') {
+          let winnerName = null;
+          let winnerLogo = null;
+
+          if (d.team_a_name && d.team_b_name) {
+            const scoreA = parseInt(d.team_a_score) || 0;
+            const scoreB = parseInt(d.team_b_score) || 0;
+            if (scoreA > scoreB) {
+              winnerName = d.team_a_name;
+              winnerLogo = d.team_a_logo;
+            } else if (scoreB > scoreA) {
+              winnerName = d.team_b_name;
+              winnerLogo = d.team_b_logo;
+            } else {
+              winnerName = d.team_a_name;
+              winnerLogo = d.team_a_logo;
+            }
+          } else if (d.team_a_name) {
+            winnerName = d.team_a_name;
+            winnerLogo = d.team_a_logo;
+          } else if (d.team_b_name) {
+            winnerName = d.team_b_name;
+            winnerLogo = d.team_b_logo;
           }
-          stats[name].count++;
+
+          if (winnerName) {
+            if (!stats[winnerName]) {
+              stats[winnerName] = {
+                name: winnerName,
+                count: 0,
+                logo: winnerLogo,
+                color: d.color,
+                gold: 0 // Placeholder as we don't have gold in data
+              };
+            }
+            stats[winnerName].count++;
+          }
         }
       });
 
@@ -932,6 +957,7 @@
       // Or filtering by where there is a score
       const battles = Object.values(allData)
         .filter(d => d.isActive && (parseInt(d.team_a_score) > 0 || parseInt(d.team_b_score) > 0))
+        .sort((a, b) => parseInt(b.zoneid) - parseInt(a.zoneid))
         .slice(0, 10);
 
       if (battles.length > 0) {
@@ -960,7 +986,10 @@
            `).join('');
       } else {
         // Fallback if no scores: just show active zones
-        const activeZones = Object.values(allData).filter(d => d.isActive).slice(0, 5);
+        const activeZones = Object.values(allData)
+          .filter(d => d.isActive)
+          .sort((a, b) => parseInt(b.zoneid) - parseInt(a.zoneid))
+          .slice(0, 5);
         if (activeZones.length > 0) {
           battlesList.innerHTML = activeZones.map(b => `
                   <div class="battle-row">
