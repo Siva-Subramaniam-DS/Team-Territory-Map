@@ -294,6 +294,23 @@
         let allData = [];
         let empires = {};
 
+        function getLogo(teamName, sheetLogoUrl) {
+            if (!teamName) return sheetLogoUrl || "";
+            const cleanName = teamName.trim().toUpperCase().replace(/[\[\]]/g, "");
+            const map = {
+                "SAMURAI": "Empire Image/Samurai.png",
+                "S-FORCE": "Empire Image/Stealth.png",
+                "SFORCE": "Empire Image/Stealth.png",
+                "RUSH-FED": "Empire Image/RushFed.png",
+                "RUSHFED": "Empire Image/RushFed.png",
+                "NEXUS ONE": "Empire Image/NexusOne.png",
+                "NEXUSONE": "Empire Image/NexusOne.png",
+                "D-WAR": "Empire Image/Dragon.png",
+                "DWAR": "Empire Image/Dragon.png"
+            };
+            return map[cleanName] || sheetLogoUrl || "";
+        }
+
         function parseCSV(str) {
             const result = [];
             let current = '';
@@ -327,12 +344,12 @@
                         if (zoneid === "zoneid") return;
 
                         const teamNameA = parts[6];
-                        const teamLogoA = parts[4];
+                        const teamLogoA = getLogo(teamNameA, parts[4]);
                         const captainA = parts[5];
                         const scoreA = parseInt(parts[7]) || 0;
 
                         const teamNameB = parts[9];
-                        const teamLogoB = parts[11];
+                        const teamLogoB = getLogo(teamNameB, parts[11]);
                         const captainB = parts[10];
                         const scoreB = parseInt(parts[8]) || 0;
 

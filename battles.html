@@ -275,6 +275,23 @@
         };
         const parseEmoji = (text) => EMOJI_MAP[text] || text || "";
 
+        function getLogo(teamName, sheetLogoUrl) {
+            if (!teamName) return sheetLogoUrl || "";
+            const cleanName = teamName.trim().toUpperCase().replace(/[\[\]]/g, "");
+            const map = {
+                "SAMURAI": "Empire Image/Samurai.png",
+                "S-FORCE": "Empire Image/Stealth.png",
+                "SFORCE": "Empire Image/Stealth.png",
+                "RUSH-FED": "Empire Image/RushFed.png",
+                "RUSHFED": "Empire Image/RushFed.png",
+                "NEXUS ONE": "Empire Image/NexusOne.png",
+                "NEXUSONE": "Empire Image/NexusOne.png",
+                "D-WAR": "Empire Image/Dragon.png",
+                "DWAR": "Empire Image/Dragon.png"
+            };
+            return map[cleanName] || sheetLogoUrl || "";
+        }
+
         // CSV Parser
         function parseCSV(str) {
             const result = [];
@@ -375,16 +392,19 @@
                         // Only add if it has some teams
                         if (!parts[6] && !parts[9]) return;
 
+                        const teamNameA = parts[6];
+                        const teamNameB = parts[9];
+
                         battles.push({
                             zoneid: zoneid,
-                            team_a_logo: parts[4],
+                            team_a_logo: getLogo(teamNameA, parts[4]),
                             team_a_captain: parts[5],
-                            team_a_name: parts[6],
+                            team_a_name: teamNameA,
                             team_a_score: parts[7],
                             team_b_score: parts[8],
-                            team_b_name: parts[9],
+                            team_b_name: teamNameB,
                             team_b_captain: parts[10],
-                            team_b_logo: parts[11],
+                            team_b_logo: getLogo(teamNameB, parts[11]),
                             ship_name: parts[12],
                             ship_class: parts[13],
                             squad_size: parts[14],
