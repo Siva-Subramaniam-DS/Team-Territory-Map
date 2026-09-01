@@ -52,6 +52,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .page-title {
@@ -59,18 +61,61 @@
             color: var(--text-main);
         }
 
+        /* --- UNIFIED TOP NAV --- */
+        .site-nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            color: var(--text-muted);
+            text-decoration: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-tab:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .nav-tab.active {
+            color: var(--accent-color);
+            background: rgba(255, 215, 0, 0.08);
+            border-color: rgba(255, 215, 0, 0.3);
+            font-weight: 600;
+        }
+
         .back-link {
             color: var(--text-muted);
             text-decoration: none;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 8px;
-            transition: color 0.2s;
+            transition: all 0.2s;
             cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            font-size: 0.9rem;
         }
 
         .back-link:hover {
             color: #fff;
+            background: rgba(255, 255, 255, 0.08);
         }
 
         /* --- EMPIRE LIST GRID --- */
@@ -263,13 +308,15 @@
 
     <div class="container">
         <div class="page-header">
-            <h1 class="page-title" id="pageTitle">Empires</h1>
-            <a id="navBack" class="back-link" href="index.html">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M19 12H5M12 19l-7-7 7-7" />
-                </svg>
-                <span id="navText">Back to Map</span>
-            </a>
+            <div>
+                <h1 class="page-title" id="pageTitle">Empires</h1>
+            </div>
+            <div class="site-nav">
+                <a href="index.html" class="nav-tab">🗺️ Map</a>
+                <a href="empires.html" class="nav-tab active">👑 Empires</a>
+                <a href="players.html" class="nav-tab">👥 Players</a>
+                <a href="battles.html" class="nav-tab">⚔️ Battles</a>
+            </div>
         </div>
 
         <!-- MAIN EMPIRE LIST -->
@@ -281,6 +328,12 @@
 
         <!-- DETAIL VIEW -->
         <div id="detailView" class="detail-view">
+            <button class="back-link" onclick="goBack()" style="outline: none; border-radius: 6px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                </svg>
+                <span>Back to All Empires</span>
+            </button>
             <div id="detailContent">
                 <!-- Injected by JS -->
             </div>
@@ -290,12 +343,13 @@
 
     <script>
         const SHEET_URL = "https://docs.google.com/spreadsheets/d/1pohzT2C9giZBJ_eH932_y_tXMCl8GjnpE5bJPgPL9ew/export?format=csv&gid=0";
+        const DEFAULT_LOGO_SVG = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgZmlsbD0iIzMzMyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIvPjwvc3ZnPg==';
 
         let allData = [];
         let empires = {};
 
         function getLogo(teamName, sheetLogoUrl) {
-            if (!teamName) return sheetLogoUrl || "";
+            if (!teamName) return sheetLogoUrl || DEFAULT_LOGO_SVG;
             const cleanName = teamName.trim().toUpperCase().replace(/[\[\]]/g, "");
             const map = {
                 "SAMURAI": "Empire Image/Samurai.png",
@@ -308,7 +362,7 @@
                 "D-WAR": "Empire Image/Dragon.png",
                 "DWAR": "Empire Image/Dragon.png"
             };
-            return map[cleanName] || sheetLogoUrl || "";
+            return map[cleanName] || sheetLogoUrl || DEFAULT_LOGO_SVG;
         }
 
         function parseCSV(str) {
@@ -330,7 +384,6 @@
         }
 
         function loadData() {
-            console.log("Loading Data...");
             fetch(SHEET_URL + "&t=" + Date.now())
                 .then(res => res.text())
                 .then(csv => {
@@ -414,13 +467,9 @@
                                         empires[teamNameB].activePlayers.add(captainB);
                                     }
                                 } else {
-                                    // Tie/equal, default to team A for compatibility
-                                    empires[teamNameA].territories++;
-                                    empires[teamNameA].victories++;
-                                    if (captainA) {
-                                        empires[teamNameA].playerStats[captainA].v++;
-                                        empires[teamNameA].activePlayers.add(captainA);
-                                    }
+                                    // Draw: mark captains active
+                                    if (captainA) empires[teamNameA].activePlayers.add(captainA);
+                                    if (captainB) empires[teamNameB].activePlayers.add(captainB);
                                 }
                             } else if (teamNameA) {
                                 empires[teamNameA].territories++;
@@ -441,6 +490,7 @@
                     });
 
                     renderGrid();
+                    handleHashChange();
                 })
                 .catch(console.error);
         }
@@ -456,7 +506,7 @@
 
             grid.innerHTML = list.map(emp => `
             <div class="empire-card" onclick="showDetail('${emp.name.replace(/'/g, "\\'")}')">
-                <img src="${emp.logo}" class="empire-logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgZmlsbD0iIzMzMyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIvPjwvc3ZnPg=='">
+                <img src="${emp.logo}" class="empire-logo" onerror="this.src='${DEFAULT_LOGO_SVG}'">
                 <div class="empire-name">${emp.name}</div>
                 <div class="empire-meta">${emp.territories} Territories</div>
                 <div class="empire-meta" style="font-size: 0.8rem; margin-top: 5px;">${emp.captains.size} Players</div>
@@ -464,35 +514,31 @@
         `).join("");
         }
 
-        function showDetail(name) {
+        function showDetail(name, updateHash = true) {
             const emp = empires[name];
             if (!emp) return;
+
+            if (updateHash) {
+                window.location.hash = encodeURIComponent(name);
+            }
 
             document.getElementById("empiresGrid").style.display = "none";
             document.getElementById("detailView").classList.add("active");
             document.getElementById("pageTitle").innerText = emp.name;
-
-            const navBack = document.getElementById("navBack");
-            navBack.removeAttribute("href");
-            navBack.onclick = (e) => {
-                e.preventDefault();
-                goBack();
-            };
-            document.getElementById("navText").innerText = "Back to Empires";
 
             const playersHtml = Array.from(emp.captains).map(cap => {
                 const stats = emp.playerStats[cap] || { v: 0, b: 0 };
                 return `
             <div class="player-row">
                 <div class="player-left">
-                     <img src="${emp.logo}" class="player-avatar" onerror="this.style.opacity=0.5">
+                     <img src="${emp.logo}" class="player-avatar" onerror="this.src='${DEFAULT_LOGO_SVG}'">
                      <div>
                         <div class="player-name">${cap}</div>
                         <div class="player-sub">${emp.name}</div>
                      </div>
                 </div>
                 <div class="player-stats">
-                    <div class="stat-box" title="Victories/Territories">
+                    <div class="stat-box" title="Victories">
                         ${stats.v} <span class="stat-v" style="color: gold; font-size: 1.2rem;">V</span>
                     </div>
                     <div class="stat-box" title="Total Assignments" style="margin-left: 20px;">
@@ -505,7 +551,7 @@
             const content = document.getElementById("detailContent");
             content.innerHTML = `
             <div class="profile-header">
-                 <img src="${emp.logo}" class="profile-logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgZmlsbD0iIzMzMyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIvPjwvc3ZnPg=='">
+                 <img src="${emp.logo}" class="profile-logo" onerror="this.src='${DEFAULT_LOGO_SVG}'">
                  <div class="profile-info">
                     <div style="font-size: 0.9rem; color: #d15d43; text-transform: uppercase; font-weight: bold; margin-bottom: 5px;">Empire Profile</div>
                     <div class="profile-name">
@@ -524,22 +570,33 @@
 
             <div class="section-title">Players</div>
             <div class="players-list">
-                ${playersHtml}
+                ${playersHtml.length > 0 ? playersHtml : '<div style="color:var(--text-muted); padding:20px;">No players listed.</div>'}
             </div>
         `;
         }
 
-        function goBack() {
+        function goBack(updateHash = true) {
+            if (updateHash && window.location.hash) {
+                history.pushState("", document.title, window.location.pathname + window.location.search);
+            }
             document.getElementById("empiresGrid").style.display = "grid";
             document.getElementById("detailView").classList.remove("active");
             document.getElementById("pageTitle").innerText = "Empires";
-
-            const navBack = document.getElementById("navBack");
-            navBack.onclick = null;
-            navBack.href = "index.html";
-            document.getElementById("navText").innerText = "Back to Map";
         }
 
+        function handleHashChange() {
+            const rawHash = window.location.hash.replace(/^#/, '').trim();
+            if (!rawHash) {
+                goBack(false);
+                return;
+            }
+            const name = decodeURIComponent(rawHash);
+            if (empires[name]) {
+                showDetail(name, false);
+            }
+        }
+
+        window.addEventListener("hashchange", handleHashChange);
         loadData();
 
     </script>

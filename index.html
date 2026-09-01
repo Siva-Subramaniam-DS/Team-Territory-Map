@@ -382,15 +382,89 @@
     }
 
     .sidebar-placeholder {
-      height: 120px;
+      min-height: 100px;
       background: rgba(0, 0, 0, 0.2);
       border: 1px dashed var(--border-color);
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       color: var(--text-muted);
       border-radius: 6px;
       font-size: 0.9rem;
+      padding: 12px;
+    }
+
+    .chronicle-item {
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 6px;
+      margin-bottom: 8px;
+      border-left: 3px solid var(--accent-color);
+      font-size: 0.85rem;
+      transition: background 0.2s;
+      width: 100%;
+      text-align: left;
+    }
+
+    .chronicle-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .chronicle-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .chronicle-zone {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .chronicle-text {
+      color: #ddd;
+      font-weight: 500;
+    }
+
+    .hof-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 215, 0, 0.05);
+      border: 1px solid rgba(255, 215, 0, 0.2);
+      padding: 12px;
+      border-radius: 8px;
+      width: 100%;
+    }
+
+    .hof-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid var(--accent-color);
+      object-fit: cover;
+      background: #111;
+    }
+
+    .hof-title {
+      font-size: 0.7rem;
+      color: var(--accent-color);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .hof-name {
+      font-size: 0.95rem;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .hof-stats {
+      font-size: 0.8rem;
+      color: var(--text-muted);
     }
 
     /* --- TOOLTIP --- */
@@ -643,24 +717,23 @@
       <div class="menu-box">
         <div class="menu-title">Menu</div>
         <ul class="menu-list">
-          <li><a href="#">Show Global Map</a></li>
+          <li><a href="#mapWrapper" id="showMapNav">Show Global Map</a></li>
           <li><a href="empires.html">Empires List</a></li>
           <li><a href="players.html">Active Players</a></li>
           <li><a href="battles.html">Battle Archive</a></li>
-          <li><a href="#">Diplomacy</a></li>
         </ul>
       </div>
 
       <div class="menu-box">
         <div class="menu-title">Chronicles</div>
-        <div class="sidebar-placeholder">
+        <div id="chronicles-feed" class="sidebar-placeholder">
           No recent chronicles
         </div>
       </div>
 
       <div class="menu-box">
         <div class="menu-title">Hall of Fame</div>
-        <div class="sidebar-placeholder">
+        <div id="hall-of-fame-content" class="sidebar-placeholder">
           Season 1 Winners
         </div>
       </div>
@@ -668,8 +741,8 @@
       <div class="menu-box">
         <div class="menu-title">Past Tournaments</div>
         <ul class="menu-list">
-          <li><a href="#">Empire 1 vs Empire 2</a></li>
-          <li><a href="#">Showdown 2024</a></li>
+          <li><a href="battles.html">Tournament Archives</a></li>
+          <li><a href="empires.html">Historical Standings</a></li>
         </ul>
       </div>
 
@@ -800,13 +873,13 @@
         </div>
         <div class="match-score">
           <div class="team-side">
-             ${data.team_a_logo ? `<img src="${data.team_a_logo}" class="team-logo">` : '<div class="team-logo"></div>'}
+             <img src="${data.team_a_logo || DEFAULT_LOGO_SVG}" class="team-logo" onerror="this.src='${DEFAULT_LOGO_SVG}'">
              <div class="team-name">${data.team_a_name || 'Team A'}</div>
              <div class="team-captain">${data.team_a_captain || '-'}</div>
           </div>
           <div class="score">${data.team_a_score || 0} : ${data.team_b_score || 0}</div>
           <div class="team-side">
-             ${data.team_b_logo ? `<img src="${data.team_b_logo}" class="team-logo">` : '<div class="team-logo"></div>'}
+             <img src="${data.team_b_logo || DEFAULT_LOGO_SVG}" class="team-logo" onerror="this.src='${DEFAULT_LOGO_SVG}'">
              <div class="team-name">${data.team_b_name || 'Team B'}</div>
              <div class="team-captain">${data.team_b_captain || '-'}</div>
           </div>
@@ -868,6 +941,25 @@
       }
     }
 
+    const DEFAULT_LOGO_SVG = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCIgZmlsbD0iIzMzMyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIvPjwvc3ZnPg==';
+
+    function getLogo(teamName, sheetLogoUrl) {
+      if (!teamName) return sheetLogoUrl || DEFAULT_LOGO_SVG;
+      const cleanName = teamName.trim().toUpperCase().replace(/[\[\]]/g, "");
+      const map = {
+        "SAMURAI": "Empire Image/Samurai.png",
+        "S-FORCE": "Empire Image/Stealth.png",
+        "SFORCE": "Empire Image/Stealth.png",
+        "RUSH-FED": "Empire Image/RushFed.png",
+        "RUSHFED": "Empire Image/RushFed.png",
+        "NEXUS ONE": "Empire Image/NexusOne.png",
+        "NEXUSONE": "Empire Image/NexusOne.png",
+        "D-WAR": "Empire Image/Dragon.png",
+        "DWAR": "Empire Image/Dragon.png"
+      };
+      return map[cleanName] || sheetLogoUrl || DEFAULT_LOGO_SVG;
+    }
+
     function parseCSV(str) {
       const result = [];
       let current = '';
@@ -906,6 +998,7 @@
               winnerName = d.team_b_name;
               winnerLogo = d.team_b_logo;
             } else {
+              // Tie: award to team_a
               winnerName = d.team_a_name;
               winnerLogo = d.team_a_logo;
             }
@@ -922,9 +1015,9 @@
               stats[winnerName] = {
                 name: winnerName,
                 count: 0,
-                logo: winnerLogo,
+                logo: winnerLogo || getLogo(winnerName, ''),
                 color: d.color,
-                gold: 0 // Placeholder as we don't have gold in data
+                gold: 0
               };
             }
             stats[winnerName].count++;
@@ -934,17 +1027,17 @@
 
       // Convert to array and sort
       const sorted = Object.values(stats)
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 3); // Top 3
+        .sort((a, b) => b.count - a.count);
+      const topEmpires = sorted.slice(0, 3); // Top 3
 
-      if (sorted.length > 0) {
-        empiresList.innerHTML = sorted.map(emp => `
+      if (topEmpires.length > 0) {
+        empiresList.innerHTML = topEmpires.map(emp => `
               <div class="empire-card" style="border-top: 3px solid ${emp.color === 'TRUE' ? '#fff' : emp.color}">
-                 <img src="${emp.logo}" class="empire-logo" onerror="this.style.opacity=0.3">
+                 <img src="${emp.logo}" class="empire-logo" onerror="this.src='${DEFAULT_LOGO_SVG}'">
                  <div class="empire-name">${emp.name}</div>
                  <div class="empire-stats">
                    <strong>${emp.count}</strong> Territories<br>
-                   <span style="font-size:0.8rem; opacity:0.7">Gold: ${emp.count * 10} (Est)</span>
+                   <span style="font-size:0.8rem; opacity:0.7">Dominance: ${Math.round((emp.count / Math.max(1, Object.keys(allData).length)) * 100)}%</span>
                  </div>
               </div>
            `).join('');
@@ -953,8 +1046,6 @@
       }
 
       // --- 2. Latest Battles ---
-      // We'll treat every active zone as a potentially "active battle" or recent event
-      // Or filtering by where there is a score
       const battles = Object.values(allData)
         .filter(d => d.isActive && (parseInt(d.team_a_score) > 0 || parseInt(d.team_b_score) > 0))
         .sort((a, b) => parseInt(b.zoneid) - parseInt(a.zoneid))
@@ -965,27 +1056,26 @@
               <div class="battle-row">
                  <div class="battle-id">#${b.zoneid}</div>
                  <div class="battle-team">
-                    <img src="${b.team_a_logo}" class="battle-logo" onerror="this.style.display='none'">
+                    <img src="${b.team_a_logo}" class="battle-logo" onerror="this.src='${DEFAULT_LOGO_SVG}'">
                     <div>
-                        <div style="font-weight:600; font-size: 0.9rem;">${b.team_a_name}</div>
+                        <div style="font-weight:600; font-size: 0.9rem;">${b.team_a_name || 'Team A'}</div>
                     </div>
                  </div>
                  <div class="battle-score">
-                    ${b.team_a_score} : ${b.team_b_score}
+                    ${b.team_a_score || 0} : ${b.team_b_score || 0}
                  </div>
                  <div class="battle-team right">
                     <div>
-                        <div style="font-weight:600; font-size: 0.9rem;">${b.team_b_name}</div>
+                        <div style="font-weight:600; font-size: 0.9rem;">${b.team_b_name || 'Team B'}</div>
                     </div>
-                    <img src="${b.team_b_logo}" class="battle-logo" onerror="this.style.display='none'">
+                    <img src="${b.team_b_logo}" class="battle-logo" onerror="this.src='${DEFAULT_LOGO_SVG}'">
                  </div>
                  <div class="battle-info">
-                    ${b.date || 'Live'}
+                    ${b.ship_name || 'Active'}
                  </div>
               </div>
            `).join('');
       } else {
-        // Fallback if no scores: just show active zones
         const activeZones = Object.values(allData)
           .filter(d => d.isActive)
           .sort((a, b) => parseInt(b.zoneid) - parseInt(a.zoneid))
@@ -995,19 +1085,69 @@
                   <div class="battle-row">
                      <div class="battle-id">#${b.zoneid}</div>
                      <div class="battle-team">
-                        <img src="${b.team_a_logo}" class="battle-logo" onerror="this.style.display='none'">
-                        <div>${b.team_a_name}</div>
+                        <img src="${b.team_a_logo}" class="battle-logo" onerror="this.src='${DEFAULT_LOGO_SVG}'">
+                        <div>${b.team_a_name || 'Contender'}</div>
                      </div>
                      <div class="battle-score">VS</div>
                      <div class="battle-team right">
-                        <div>${b.team_b_name}</div>
-                        <img src="${b.team_b_logo}" class="battle-logo" onerror="this.style.display='none'">
+                        <div>${b.team_b_name || 'Contender'}</div>
+                        <img src="${b.team_b_logo}" class="battle-logo" onerror="this.src='${DEFAULT_LOGO_SVG}'">
                      </div>
-                     <div class="battle-info">Prep</div>
+                     <div class="battle-info">${b.ship_name || 'Pre-Match'}</div>
                   </div>
                `).join('');
         } else {
           battlesList.innerHTML = '<div style="text-align:center; padding:20px; color:#555;">No Active Battles</div>';
+        }
+      }
+
+      // --- 3. Chronicles (Sidebar Feed) ---
+      const chroniclesFeed = document.getElementById("chronicles-feed");
+      if (chroniclesFeed) {
+        const recentEvents = Object.values(allData)
+          .filter(d => d.isActive && d.team_a_name)
+          .sort((a, b) => parseInt(b.zoneid) - parseInt(a.zoneid))
+          .slice(0, 3);
+
+        if (recentEvents.length > 0) {
+          chroniclesFeed.className = "";
+          chroniclesFeed.innerHTML = recentEvents.map(ev => {
+            const matchup = ev.team_b_name ? `${ev.team_a_name} vs ${ev.team_b_name}` : `${ev.team_a_name} Sector`;
+            return `
+              <div class="chronicle-item">
+                <div class="chronicle-zone">
+                  <span>Zone #${ev.zoneid}</span>
+                  <span>${ev.ship_class || 'Engaged'}</span>
+                </div>
+                <div class="chronicle-text">${matchup}</div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          chroniclesFeed.className = "sidebar-placeholder";
+          chroniclesFeed.innerHTML = "No recent chronicles";
+        }
+      }
+
+      // --- 4. Hall of Fame (Sidebar #1 Champion) ---
+      const hallOfFameContent = document.getElementById("hall-of-fame-content");
+      if (hallOfFameContent) {
+        if (sorted.length > 0) {
+          const leader = sorted[0];
+          hallOfFameContent.className = "";
+          hallOfFameContent.innerHTML = `
+            <div class="hof-card">
+              <img src="${leader.logo}" class="hof-logo" onerror="this.src='${DEFAULT_LOGO_SVG}'">
+              <div class="hof-info">
+                <div class="hof-title">👑 Reigning Leader</div>
+                <div class="hof-name">${leader.name}</div>
+                <div class="hof-stats">${leader.count} Territories Controlled</div>
+              </div>
+            </div>
+          `;
+        } else {
+          hallOfFameContent.className = "sidebar-placeholder";
+          hallOfFameContent.innerHTML = "Season 1 Winners";
         }
       }
     }
@@ -1019,9 +1159,6 @@
           const rows = csv.trim().split("\n").slice(1);
           const newTeamData = {};
 
-          // Clear current drawings (optional, but safer to re-apply)
-          // Actually we just update attributes. 
-
           rows.forEach(row => {
             const parts = parseCSV(row);
             if (parts.length < 1) return;
@@ -1029,19 +1166,21 @@
             if (zoneid === "zoneid" || !cells[zoneid]) return;
 
             const isActive = parts[15]?.trim().toUpperCase() === "TRUE";
+            const teamNameA = parts[6] || "";
+            const teamNameB = parts[9] || "";
 
             const data = {
               zoneid: zoneid,
               color: parts[1]?.toLowerCase(),
               emoji_bg: parseEmoji(parts[2]),
-              team_a_logo: parts[4],
+              team_a_logo: getLogo(teamNameA, parts[4]),
               team_a_captain: parts[5],
-              team_a_name: parts[6],
+              team_a_name: teamNameA,
               team_a_score: parts[7],
               team_b_score: parts[8],
-              team_b_name: parts[9],
+              team_b_name: teamNameB,
               team_b_captain: parts[10],
-              team_b_logo: parts[11],
+              team_b_logo: getLogo(teamNameB, parts[11]),
               ship_name: parts[12],
               ship_class: parts[13],
               squad_size: parts[14],
@@ -1110,6 +1249,14 @@
     const mapWrapper = document.getElementById("mapWrapper");
     const expandBtn = document.getElementById("expandMapBtn");
     const closeBtn = document.getElementById("closeMapBtn");
+    const showMapNav = document.getElementById("showMapNav");
+
+    if (showMapNav && mapWrapper) {
+      showMapNav.addEventListener("click", (e) => {
+        e.preventDefault();
+        mapWrapper.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
 
     if (expandBtn && mapWrapper) {
       expandBtn.addEventListener("click", () => {
